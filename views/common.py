@@ -12,10 +12,15 @@ VENDOR_FK = "SELECT Vendor_ID AS id, Vendor_Name AS label FROM VENDOR ORDER BY l
 CATEGORY_FK = "SELECT Category_ID AS id, Category_Name AS label FROM EQUIPMENT_CATEGORY ORDER BY label"
 EQUIPMENT_FK = ("SELECT Equipment_ID AS id, Equipment_Name || ' [' || Serial_Number || '] · ' || Equipment_Status "
                 "AS label FROM EQUIPMENT ORDER BY Equipment_Name")
+# Equipment in these states cannot take new or active (PENDING/APPROVED) bookings.
+UNBOOKABLE_STATUS = ("UNDER_MAINTENANCE", "UNDER_CALIBRATION", "RETIRED")
+BOOKABLE_EQUIPMENT_FK = ("SELECT Equipment_ID AS id, Equipment_Name || ' [' || Serial_Number || '] · ' || Equipment_Status "
+                         "AS label FROM EQUIPMENT WHERE Equipment_Status NOT IN "
+                         "('UNDER_MAINTENANCE', 'UNDER_CALIBRATION', 'RETIRED') ORDER BY Equipment_Name")
 USER_FK = "SELECT User_ID AS id, Full_Name || ' <' || Email || '>' AS label FROM LAB_USER ORDER BY Full_Name"
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-PHONE_RE = re.compile(r"^\+?[0-9 ()-]{7,20}$")
+PHONE_RE = re.compile(r"^[0-9]{10}$")
 
 
 def header(title, caption=None):
@@ -31,7 +36,7 @@ def contact_errors(values, email_cols=(), phone_cols=()):
             errors.append(f"{c.replace('_', ' ')} is not a valid email address.")
     for c in phone_cols:
         if values.get(c) and not PHONE_RE.match(values[c]):
-            errors.append(f"{c.replace('_', ' ')} is not a valid phone number.")
+            errors.append(f"{c.replace('_', ' ')} must be exactly 10 digits (numbers only).")
     return errors
 
 

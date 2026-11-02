@@ -7,7 +7,7 @@ import streamlit as st
 from auth import can_manage, current_user
 from crud import Col, TableSpec, flash, render_crud, render_table
 from db import friendly_error, log_action, notify, query_all, query_df, today_str, transaction
-from views.common import EQUIPMENT_FK, USER_FK, header
+from views.common import BOOKABLE_EQUIPMENT_FK, EQUIPMENT_FK, UNBOOKABLE_STATUS, USER_FK, header
 
 BOOKING_STATUS = ["PENDING", "APPROVED", "REJECTED", "CANCELLED", "COMPLETED"]
 ACTIVE_STATUS = ("PENDING", "APPROVED")
@@ -52,6 +52,16 @@ def find_conflicts(conn, equipment_id, booking_date, slot, exclude_id=None):
     return conflicts
 
 
+def unbookable_reason(conn, equipment_id):
+    """Why this equipment cannot be booked right now, or None if it can."""
+    eq = conn.execute("SELECT Equipment_Name, Equipment_Status FROM EQUIPMENT WHERE Equipment_ID = ?",
+                      (equipment_id,)).fetchone()
+    if eq and eq["Equipment_Status"] in UNBOOKABLE_STATUS:
+        state = eq["Equipment_Status"].replace("_", " ").lower()
+        return f"{eq['Equipment_Name']} is {state} and cannot be booked until it is available again."
+    return None
+
+
 def _validate(values, mode, old, conn):
     errors = []
     if parse_slot(values.get("Time_Slot")) is None:
@@ -59,10 +69,9 @@ def _validate(values, mode, old, conn):
     if mode == "add" and not can_manage() and values.get("Booking_Date", "") < today_str():
         errors.append("Bookings cannot be made for a past date.")
     if values.get("Booking_Status") in ACTIVE_STATUS:
-        eq = conn.execute("SELECT Equipment_Name, Equipment_Status FROM EQUIPMENT WHERE Equipment_ID = ?",
-                          (values["Equipment_ID"],)).fetchone()
-        if eq and eq["Equipment_Status"] == "RETIRED":
-            errors.append(f"{eq['Equipment_Name']} is RETIRED and cannot be booked.")
+        reason = unbookable_reason(conn, values["Equipment_ID"])
+        if reason:
+            errors.append(reason)
         for c in find_conflicts(conn, values["Equipment_ID"], values["Booking_Date"], values["Time_Slot"],
                                 old["Booking_ID"] if old else None):
             errors.append(f"Double booking rejected: booking #{c['Booking_ID']} ({c['Time_Slot']}, "
@@ -86,6 +95,11 @@ def set_status(booking_id, status):
     try:
         with transaction() as conn:
             row = conn.execute("SELECT * FROM EQUIPMENT_BOOKING WHERE Booking_ID = ?", (booking_id,)).fetchone()
+            if status in ACTIVE_STATUS:
+                reason = unbookable_reason(conn, row["Equipment_ID"])
+                if reason:
+                    flash("error", f"Booking #{booking_id} not {status.lower()}: {reason}")
+                    return
             conn.execute("UPDATE EQUIPMENT_BOOKING SET Booking_Status = ? WHERE Booking_ID = ?", (status, booking_id))
             values = dict(row)
             old = dict(row)
@@ -100,15 +114,21 @@ def set_status(booking_id, status):
 
 def _approvals_tab():
     pending = query_df(VIEW_SQL.format(where="WHERE b.Booking_Status = 'PENDING'"))
+    status_of = {r["Serial_Number"]: r["Equipment_Status"]
+                 for r in query_all("SELECT Serial_Number, Equipment_Status FROM EQUIPMENT")}
     if pending.empty:
         st.success("No bookings are waiting for approval.")
         return
     st.caption(f"{len(pending)} booking request(s) waiting for a decision.")
     for r in pending.itertuples():
         c1, c2, c3 = st.columns([6, 1, 1])
+        eq_status = status_of.get(r.Serial_Number)
+        blocked = eq_status in UNBOOKABLE_STATUS
         c1.markdown(f"**#{r.Booking_ID}** · {r.Equipment_Name} · {r.Booking_Date} {r.Time_Slot} · "
-                    f"{r.Booked_By} ({r.Lab_Name or '—'})")
-        if c2.button("Approve", key=f"appr_{r.Booking_ID}", type="primary"):
+                    f"{r.Booked_By} ({r.Lab_Name or '—'})"
+                    + (f"  \n:red[Equipment is {eq_status.replace('_', ' ').lower()} — cannot be approved]"
+                       if blocked else ""))
+        if c2.button("Approve", key=f"appr_{r.Booking_ID}", type="primary", disabled=blocked):
             set_status(r.Booking_ID, "APPROVED")
             st.rerun()
         if c3.button("Reject", key=f"rej_{r.Booking_ID}"):
@@ -125,15 +145,22 @@ def _availability_tab():
     equipment = query_df("""SELECT e.Equipment_ID, e.Equipment_Name, e.Serial_Number, e.Equipment_Type,
                             e.Equipment_Status, l.Lab_Name FROM EQUIPMENT e
                             LEFT JOIN LABORATORY l ON l.Lab_ID = e.Lab_ID
-                            WHERE e.Equipment_Status <> 'RETIRED' ORDER BY e.Equipment_Name""")
+                            WHERE e.Equipment_Status NOT IN ('UNDER_MAINTENANCE', 'UNDER_CALIBRATION', 'RETIRED')
+                            ORDER BY e.Equipment_Name""")
     booked = query_df("SELECT Equipment_ID, Time_Slot FROM EQUIPMENT_BOOKING WHERE Booking_Date = ? "
                       "AND Booking_Status IN ('PENDING', 'APPROVED')", (day,))
     busy = {r.Equipment_ID for r in booked.itertuples()
             if parse_slot(r.Time_Slot) and span[0] < parse_slot(r.Time_Slot)[1] and parse_slot(r.Time_Slot)[0] < span[1]}
     free = equipment[~equipment.Equipment_ID.isin(busy)]
-    st.caption(f"{len(free)} of {len(equipment)} active items are free on {day}, {slot}. Items under maintenance "
-               "or calibration are listed with their status so you can judge whether they will be ready.")
+    st.caption(f"{len(free)} of {len(equipment)} bookable items are free on {day}, {slot}.")
     render_table(free, "avail_free", ["Lab_Name", "Equipment_Type", "Equipment_Status"], f"free_{day}.csv")
+    servicing = query_df("""SELECT e.Equipment_Name, e.Serial_Number, e.Equipment_Status, l.Lab_Name FROM EQUIPMENT e
+                            LEFT JOIN LABORATORY l ON l.Lab_ID = e.Lab_ID
+                            WHERE e.Equipment_Status IN ('UNDER_MAINTENANCE', 'UNDER_CALIBRATION')
+                            ORDER BY e.Equipment_Name""")
+    if not servicing.empty:
+        st.subheader("Not bookable: under maintenance or calibration")
+        render_table(servicing, "avail_servicing", file_name="servicing.csv", search=False)
     st.subheader(f"Bookings on {day}")
     render_table(query_df(VIEW_SQL.format(where="WHERE b.Booking_Date = ?"), (day,)), "avail_day",
                  ["Booking_Status"], f"bookings_{day}.csv", search=False)
@@ -141,11 +168,13 @@ def _availability_tab():
 
 def page():
     header("📅 Equipment Booking", "User makes Equipment Booking · overlapping PENDING/APPROVED bookings for the "
-                                  "same equipment and date are rejected.")
+                                  "same equipment and date are rejected, and equipment under "
+                                  "maintenance or calibration cannot be booked.")
     user = current_user()
     manage = can_manage()
     columns = [
-        Col("Equipment_ID", "Equipment", kind="fk", fk_sql=EQUIPMENT_FK, required=True),
+        Col("Equipment_ID", "Equipment", kind="fk", fk_sql=EQUIPMENT_FK, add_fk_sql=BOOKABLE_EQUIPMENT_FK,
+            required=True, help="Equipment under maintenance, under calibration or retired cannot be booked."),
         Col("User_ID", "Booked by", kind="fk", required=True,
             fk_sql=USER_FK if manage else
             f"SELECT User_ID AS id, Full_Name AS label FROM LAB_USER WHERE User_ID = {int(user['User_ID'])}",

@@ -38,19 +38,19 @@ def seed():
         org = insert(conn, "ORGANIZATION", dict(
             Organization_Name="Northfield Institute of Technology", Organization_Type="University",
             Address="12 College Road, Northfield", Contact_Email="info@northfield.edu",
-            Contact_Number="+91 11 4000 1000"))
+            Contact_Number="1140001000"))
         insert(conn, "ORGANIZATION", dict(
             Organization_Name="Northfield Research Foundation", Organization_Type="Research Institute",
             Address="Innovation Park, Block C, Northfield", Contact_Email="contact@nrf.org",
-            Contact_Number="+91 11 4000 2000"))
+            Contact_Number="1140002000"))
 
         depts = {}
         for name, hod, building, phone, status in [
-            ("Computer Science & Engineering", "Dr. R. Menon", "Turing Block", "+91 11 4000 1101", "ACTIVE"),
-            ("Electronics & Communication", "Dr. S. Pillai", "Bose Block", "+91 11 4000 1102", "ACTIVE"),
-            ("Mechanical Engineering", "Dr. K. Rathore", "Visvesvaraya Block", "+91 11 4000 1103", "ACTIVE"),
-            ("Physics", "Dr. L. Fernandes", "Raman Block", "+91 11 4000 1104", "ACTIVE"),
-            ("Biotechnology", "Dr. P. Das", "Khorana Block", "+91 11 4000 1105", "INACTIVE"),
+            ("Computer Science & Engineering", "Dr. R. Menon", "Turing Block", "1140001101", "ACTIVE"),
+            ("Electronics & Communication", "Dr. S. Pillai", "Bose Block", "1140001102", "ACTIVE"),
+            ("Mechanical Engineering", "Dr. K. Rathore", "Visvesvaraya Block", "1140001103", "ACTIVE"),
+            ("Physics", "Dr. L. Fernandes", "Raman Block", "1140001104", "ACTIVE"),
+            ("Biotechnology", "Dr. P. Das", "Khorana Block", "1140001105", "INACTIVE"),
         ]:
             depts[name] = insert(conn, "DEPARTMENT", dict(
                 Department_Name=name, HOD_Name=hod, Building_Name=building, Contact_Number=phone,
@@ -82,45 +82,45 @@ def seed():
         users = {}
         people = [
             # key, name, email, phone, dept, role, {subtype: data}
-            ("admin", "Jyotsna", "admin@smartlab.edu", "+91 98100 00001", cse, "Administrator",
+            ("admin", "Jyotsna", "admin@smartlab.edu", "9810000001", cse, "Administrator",
              {"ADMINISTRATOR": dict(Admin_Level="Super Admin", Permissions="ALL")}),
-            ("manager", "Rahul Verma", "manager@smartlab.edu", "+91 98100 00002", ece, "Lab Manager",
+            ("manager", "Rahul Verma", "manager@smartlab.edu", "9810000002", ece, "Lab Manager",
              {"LAB_MANAGER": dict(Office_Room="B-301", Experience=11,
                                   Managed_Labs="AI & Data Science Lab, Embedded Systems Lab, Optics & Photonics Lab")}),
-            ("manager2", "Sanjay Gupta", "manager2@smartlab.edu", "+91 98100 00003", mech, "Lab Manager",
+            ("manager2", "Sanjay Gupta", "manager2@smartlab.edu", "9810000003", mech, "Lab Manager",
              {"LAB_MANAGER": dict(Office_Room="V-110", Experience=8,
                                   Managed_Labs="Manufacturing Lab, Computer Networks Lab, Signal Processing Lab"),
               "FACULTY": dict(Department_Affiliation="Mechanical Engineering", Designation="Associate Professor",
                               Date_of_Joining=d(-3200))}),
-            ("tech", "Arjun Singh", "tech@smartlab.edu", "+91 98100 00004", ece, "Lab Technician",
+            ("tech", "Arjun Singh", "tech@smartlab.edu", "9810000004", ece, "Lab Technician",
              {"LAB_TECHNICIAN": dict(Skill_Type="Electronics & instrumentation", Shift_Time="Morning",
                                      Certification="NABL Calibration Technician")}),
-            ("tech2", "Neha Kapoor", "tech2@smartlab.edu", "+91 98100 00005", cse, "Lab Technician",
+            ("tech2", "Neha Kapoor", "tech2@smartlab.edu", "9810000005", cse, "Lab Technician",
              {"LAB_TECHNICIAN": dict(Skill_Type="Computer hardware & networking", Shift_Time="Afternoon",
                                      Certification="CompTIA A+, CCNA")}),
-            ("tech3", "Vikram Rao", "tech3@smartlab.edu", "+91 98100 00006", mech, "Lab Technician",
+            ("tech3", "Vikram Rao", "tech3@smartlab.edu", "9810000006", mech, "Lab Technician",
              {"LAB_TECHNICIAN": dict(Skill_Type="CNC & mechanical testing", Shift_Time="Morning",
                                      Certification="ISO 17025 Internal Auditor")}),
-            ("faculty", "Dr. Meera Iyer", "faculty@smartlab.edu", "+91 98100 00007", cse, "Faculty",
+            ("faculty", "Dr. Meera Iyer", "faculty@smartlab.edu", "9810000007", cse, "Faculty",
              {"FACULTY": dict(Department_Affiliation="Computer Science & Engineering", Designation="Professor",
                               Date_of_Joining=d(-4800)),
               "RESEARCHER": dict(Research_Area="Machine Learning", Qualification="PhD",
                                  Research_Interest="Federated learning, medical imaging")}),
-            ("faculty2", "Dr. Anil Kumar", "faculty2@smartlab.edu", "+91 98100 00008", ece, "Faculty",
+            ("faculty2", "Dr. Anil Kumar", "faculty2@smartlab.edu", "9810000008", ece, "Faculty",
              {"FACULTY": dict(Department_Affiliation="Electronics & Communication", Designation="Assistant Professor",
                               Date_of_Joining=d(-1500))}),
-            ("faculty3", "Dr. Sunita Joshi", "faculty3@smartlab.edu", "+91 98100 00009", phy, "Faculty",
+            ("faculty3", "Dr. Sunita Joshi", "faculty3@smartlab.edu", "9810000009", phy, "Faculty",
              {"FACULTY": dict(Department_Affiliation="Physics", Designation="Associate Professor",
                               Date_of_Joining=d(-2900)),
               "RESEARCHER": dict(Research_Area="Photonics", Qualification="PhD",
                                  Research_Interest="Fibre lasers, spectroscopy")}),
-            ("researcher", "Kavya Nair", "researcher@smartlab.edu", "+91 98100 00010", cse, "Researcher",
+            ("researcher", "Kavya Nair", "researcher@smartlab.edu", "9810000010", cse, "Researcher",
              {"RESEARCHER": dict(Research_Area="Computer Vision", Qualification="MTech",
                                  Research_Interest="Edge AI on embedded GPUs")}),
-            ("researcher2", "Rohan Mehta", "researcher2@smartlab.edu", "+91 98100 00011", mech, "Researcher",
+            ("researcher2", "Rohan Mehta", "researcher2@smartlab.edu", "9810000011", mech, "Researcher",
              {"RESEARCHER": dict(Research_Area="Advanced Materials", Qualification="MSc",
                                  Research_Interest="Composite fatigue testing")}),
-            ("student", "Ishita Banerjee", "student@smartlab.edu", "+91 98100 00012", ece, "Student",
+            ("student", "Ishita Banerjee", "student@smartlab.edu", "9810000012", ece, "Student",
              {"RESEARCHER": dict(Research_Area="Wireless Communication", Qualification="BSc",
                                  Research_Interest="SDR-based 5G testbeds")}),
         ]
@@ -137,13 +137,13 @@ def seed():
         # ---------------- Vendors & categories ----------------
         vendors = {}
         for name, person, phone, email, addr in [
-            ("Dell Technologies India", "Amit Khanna", "+91 80 2800 1000", "edu.sales@dell.example", "Bengaluru"),
-            ("Keysight Technologies", "Lisa Thomas", "+91 80 4000 2000", "support@keysight.example", "Bengaluru"),
-            ("Tektronix India", "Ravi Shetty", "+91 80 4100 3000", "india@tek.example", "Bengaluru"),
-            ("Haas Automation", "Mark Ellis", "+1 805 278 1800", "service@haas.example", "Oxnard, CA"),
-            ("Thorlabs", "Julia Weber", "+49 8131 5956 0", "europe@thorlabs.example", "Munich"),
-            ("Cisco Systems", "Deepak Jain", "+91 22 6100 4000", "academy@cisco.example", "Mumbai"),
-            ("Instron", "Peter Grant", "+44 1494 464646", "info@instron.example", "High Wycombe"),
+            ("Dell Technologies India", "Amit Khanna", "8028001000", "edu.sales@dell.example", "Bengaluru"),
+            ("Keysight Technologies", "Lisa Thomas", "8040002000", "support@keysight.example", "Bengaluru"),
+            ("Tektronix India", "Ravi Shetty", "8041003000", "india@tek.example", "Bengaluru"),
+            ("Haas Automation", "Mark Ellis", "8052781800", "service@haas.example", "Oxnard, CA"),
+            ("Thorlabs", "Julia Weber", "8131595600", "europe@thorlabs.example", "Munich"),
+            ("Cisco Systems", "Deepak Jain", "2261004000", "academy@cisco.example", "Mumbai"),
+            ("Instron", "Peter Grant", "1494464646", "info@instron.example", "High Wycombe"),
         ]:
             vendors[name] = insert(conn, "VENDOR", dict(Vendor_Name=name, Contact_Person=person, Phone_Number=phone,
                                                         Email=email, Address=addr))
@@ -280,6 +280,8 @@ def seed():
             for _ in range(rng.randint(14, 26) if offset < 0 else rng.randint(4, 9)):
                 e = rng.choices(bookable, weights)[0]
                 if e["status"] == "RETIRED" or dt.date.fromisoformat(e["purchase"]) > day:
+                    continue
+                if offset >= 0 and e["status"] in ("UNDER_MAINTENANCE", "UNDER_CALIBRATION"):
                     continue
                 start = rng.randint(0, len(slots) - 2)
                 length = rng.choice([1, 2, 2])

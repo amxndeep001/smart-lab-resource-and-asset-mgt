@@ -129,7 +129,7 @@ def page():
         columns=[
             Col("Full_Name", required=True, rule="person"),
             Col("Email", required=True),
-            Col("Phone_Number"),
+            Col("Phone_Number", max_chars=10, help="10-digit number, digits only"),
             Col("Department_ID", "Department", kind="fk", fk_sql=DEPT_FK, required=True),
             Col("Role_ID", "Role", kind="fk", fk_sql=ROLE_FK, required=True),
         ],
