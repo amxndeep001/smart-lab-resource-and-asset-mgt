@@ -67,7 +67,7 @@ def login_page():
             st.markdown('<div class="login-head">Administrator sign in</div>'
                         '<div class="login-sub">Only administrator accounts can access this console.</div>',
                         unsafe_allow_html=True)
-            email = st.text_input("Email", placeholder="admin@smartlab.edu")
+            email = st.text_input("Email", placeholder="you@example.com")
             password = st.text_input("Password", type="password", placeholder="••••••••")
             submitted = st.form_submit_button("Sign in", type="primary", width="stretch")
         if submitted:
@@ -80,8 +80,6 @@ def login_page():
                     st.session_state["_flash"] = [("warning", f"Could not refresh alerts: {exc}")]
                 st.rerun()
             st.error("Invalid credentials, or this account is not an administrator.")
-        st.markdown('<div class="login-foot">Demo: <code>admin@smartlab.edu</code> / <code>lab12345</code></div>',
-                    unsafe_allow_html=True)
 
 
 def sidebar(user):

@@ -6,7 +6,7 @@ writes inside a single transaction and records every change in AUDIT_LOG.
 """
 import datetime as dt
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable, List, Optional
 
 import streamlit as st
@@ -39,12 +39,14 @@ class Col:
     required: bool = False
     options: Optional[list] = None  # for kind="select"
     fk_sql: Optional[str] = None  # for kind="fk": SELECT <id> AS id, <label> AS label ...
+    add_fk_sql: Optional[str] = None  # narrower option list used only on the Add form
     default: Any = None
     help: Optional[str] = None
     min_value: Optional[float] = None
     max_value: Optional[float] = None
     disabled: bool = False
     rule: Optional[str] = None  # key of TEXT_RULES: person | title | code
+    max_chars: Optional[int] = None  # hard input limit for kind="text"
 
     @property
     def title(self):
@@ -178,7 +180,7 @@ def render_field(col: Col, value, key):
                             disabled=col.disabled, height=90)
 
     return st.text_input(col.title, value="" if value is None else str(value), key=key, help=help_text,
-                         disabled=col.disabled)
+                         disabled=col.disabled, max_chars=col.max_chars)
 
 
 def normalize(value):
@@ -317,7 +319,8 @@ def _save(spec, mode, values, extra, old=None):
 def _add_tab(spec):
     counter = st.session_state.setdefault(f"{spec.table}_add_n", 0)
     key = f"{spec.table}_add_{counter}"
-    values = render_fields(spec.columns, None, key)
+    columns = [replace(c, fk_sql=c.add_fk_sql) if c.add_fk_sql else c for c in spec.columns]
+    values = render_fields(columns, None, key)
     extra = spec.extra_form("add", None, values, key) if spec.extra_form else {}
     if st.button(f"💾 Save new record", key=f"{key}_save", type="primary"):
         ok, result = _save(spec, "add", values, extra)

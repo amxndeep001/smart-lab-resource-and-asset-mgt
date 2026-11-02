@@ -22,7 +22,7 @@ def organizations():
             Col("Organization_Type", kind="select", options=["University", "Research Institute", "College",
                                                               "Hospital", "Private Lab", "Government"]),
             Col("Contact_Email"),
-            Col("Contact_Number"),
+            Col("Contact_Number", max_chars=10, help="10-digit number, digits only"),
             Col("Address", kind="textarea"),
         ],
         view_sql="""SELECT o.*, (SELECT COUNT(*) FROM DEPARTMENT d WHERE d.Organization_ID = o.Organization_ID)
@@ -42,7 +42,7 @@ def departments():
             Col("Organization_ID", "Organization", kind="fk", fk_sql=ORG_FK, required=True),
             Col("HOD_Name", "HOD name", rule="person"),
             Col("Building_Name", rule="title"),
-            Col("Contact_Number"),
+            Col("Contact_Number", max_chars=10, help="10-digit number, digits only"),
             Col("Status", kind="select", options=STATUS, required=True, default="ACTIVE"),
         ],
         view_sql="""SELECT d.Department_ID, d.Department_Name, o.Organization_Name, d.HOD_Name, d.Building_Name,
@@ -102,7 +102,7 @@ def vendors():
         columns=[
             Col("Vendor_Name", required=True, rule="title"),
             Col("Contact_Person", rule="person"),
-            Col("Phone_Number"),
+            Col("Phone_Number", max_chars=10, help="10-digit number, digits only"),
             Col("Email"),
             Col("Address", kind="textarea"),
         ],
